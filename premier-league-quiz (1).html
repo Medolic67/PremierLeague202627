@@ -1,0 +1,773 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Name Every Prem Player</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#EEF1EC;
+  --card:#FFFFFF;
+  --ink:#13203A;
+  --ink-soft:#56607A;
+  --line:#D8DDD4;
+  --slot:#F5F7F3;
+  --turf:#1F6B45;
+  --turf-soft:#E2F0E7;
+  --miss:#B8322B;
+  --miss-soft:#FBE9E7;
+  --gold:#F2C744;
+  --board:#13203A;
+  --board-ink:#F4F6F1;
+  --board-soft:#8E9AB5;
+  --cond:"Barlow Condensed", "Arial Narrow", sans-serif;
+  --body:"Barlow", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0E1524; --card:#17213A; --ink:#E9EDF5; --ink-soft:#9AA6C0; --line:#28344F;
+    --slot:#1D2843; --turf:#4CC085; --turf-soft:#183A2C; --miss:#F07F77; --miss-soft:#3A1E22;
+    --board:#0A1020; --board-ink:#F4F6F1; --board-soft:#7F8CA8;
+  }
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.45}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+
+/* ---------- scoreboard ---------- */
+.board{position:sticky;top:0;z-index:20;background:var(--board);color:var(--board-ink);box-shadow:0 2px 0 rgba(0,0,0,.25)}
+.board-inner{max-width:1280px;margin:0 auto;padding:14px 16px 12px;display:grid;grid-template-columns:auto 1fr auto;gap:12px 20px;align-items:center}
+.title{font-family:var(--cond);font-weight:800;font-size:28px;line-height:1;letter-spacing:.01em;margin:0}
+.title small{display:block;font-weight:500;font-size:14px;color:var(--board-soft);letter-spacing:0;margin-top:4px}
+.entry{position:relative}
+.entry input{width:100%;height:52px;border-radius:10px;border:2px solid #2C3A5C;background:#0B1326;color:var(--board-ink);padding:0 16px;font-size:20px;font-weight:600}
+.entry input::placeholder{color:#5D6987;font-weight:500}
+.entry input:focus{outline:none;border-color:var(--gold)}
+.entry input:disabled{opacity:.5}
+.entry.shake input{animation:shake .3s}
+@keyframes shake{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.feedback{position:absolute;left:4px;top:56px;font-size:14px;color:var(--board-soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.feedback.ok{color:#7FE0A8}
+.feedback.warn{color:var(--gold)}
+.stats{display:flex;gap:18px;align-items:center}
+.stat{text-align:right}
+.stat b{display:block;font-family:var(--cond);font-weight:700;font-size:34px;line-height:1;font-variant-numeric:tabular-nums}
+.stat span{font-size:13px;color:var(--board-soft)}
+.stat.timer.low b{color:#FF8A80}
+.board-actions{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.btn{height:36px;padding:0 14px;border-radius:8px;border:1px solid #33426A;background:#1C2A4A;color:var(--board-ink);font-weight:600;cursor:pointer}
+.btn:hover{background:#25365E}
+.btn.primary{background:var(--gold);border-color:var(--gold);color:#13203A}
+.btn.primary:hover{background:#FFD55C}
+.btn.danger{border-color:#7A2E2E;background:#3A1B22}
+.btn.danger:hover{background:#52222B}
+.btn:disabled{opacity:.45;cursor:default}
+.progress{grid-column:1/-1;height:6px;border-radius:3px;background:#24314F;overflow:hidden}
+.progress i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--turf),#5AD18F);transition:width .3s}
+
+/* ---------- controls ---------- */
+main{max-width:1280px;margin:0 auto;padding:20px 16px 60px}
+.controls{display:flex;flex-wrap:wrap;gap:12px 28px;align-items:flex-start;margin-bottom:14px}
+.group{display:flex;flex-direction:column;gap:6px}
+.group > label, .group-label{font-size:13px;font-weight:600;color:var(--ink-soft)}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:9px;background:var(--card);padding:3px;gap:2px}
+.seg button{border:0;background:none;padding:6px 12px;border-radius:6px;font-weight:600;cursor:pointer;color:var(--ink-soft)}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--card)}
+.toggle{display:inline-flex;align-items:center;gap:8px;padding:7px 12px;border:1px solid var(--line);border-radius:9px;background:var(--card);cursor:pointer;font-weight:600;user-select:none}
+.toggle input{accent-color:var(--turf);width:16px;height:16px;margin:0}
+select{height:36px;border:1px solid var(--line);border-radius:9px;background:var(--card);padding:0 10px;font-weight:600}
+.toggles{display:flex;gap:8px;flex-wrap:wrap}
+
+details.clubs{margin-bottom:18px;background:var(--card);border:1px solid var(--line);border-radius:12px}
+details.clubs summary{cursor:pointer;padding:12px 16px;font-weight:600;list-style:none;display:flex;justify-content:space-between;gap:10px}
+details.clubs summary::-webkit-details-marker{display:none}
+details.clubs summary::after{content:"Show";font-weight:500;color:var(--ink-soft)}
+details.clubs[open] summary::after{content:"Hide"}
+.chip-wrap{padding:0 16px 14px}
+.chip-tools{display:flex;gap:8px;margin-bottom:10px}
+.link{background:none;border:0;padding:0;color:var(--turf);font-weight:600;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--line);border-radius:999px;padding:5px 12px 5px 6px;background:var(--slot);cursor:pointer;font-weight:600;font-size:14px}
+.chip .dot{width:16px;height:16px;border-radius:50%;border:2px solid rgba(0,0,0,.08)}
+.chip[aria-pressed="false"]{opacity:.45;background:transparent}
+
+/* ---------- grid ---------- */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:16px}
+.team{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden;display:flex;flex-direction:column}
+.team-head{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--c1);color:var(--c1ink)}
+.team-head h2{margin:0;font-family:var(--cond);font-weight:700;font-size:22px;line-height:1.1;flex:1}
+.team-head .count{font-family:var(--cond);font-weight:700;font-size:20px;font-variant-numeric:tabular-nums}
+.team-head .crest{width:14px;height:28px;border-radius:3px;background:var(--c2);box-shadow:0 0 0 2px rgba(255,255,255,.35)}
+.team-bar{height:4px;background:var(--line)}
+.team-bar i{display:block;height:100%;width:0;background:var(--turf);transition:width .3s}
+.team.done .team-head .count::after{content:" ✓"}
+ol.slots{list-style:none;margin:0;padding:8px;display:grid;gap:4px}
+.slot{display:flex;align-items:center;gap:8px;min-height:34px;padding:4px 8px;border-radius:7px;background:var(--slot);font-size:15px}
+.slot .name{flex:1;font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.slot .blank{flex:1;height:2px;background:var(--line);border-radius:1px;align-self:center;margin-top:12px}
+.tag{font-family:var(--cond);font-weight:700;font-size:13px;padding:1px 6px;border-radius:4px;flex:none;line-height:1.4}
+.tag.pos{background:var(--ink);color:var(--card);min-width:36px;text-align:center}
+.tag.pos.GK{background:#B7791F;color:#fff}
+.tag.pos.DEF{background:#2F5DA8;color:#fff}
+.tag.pos.MID{background:#2E7D4F;color:#fff}
+.tag.pos.FWD{background:#B03A48;color:#fff}
+.tag.u21{background:transparent;color:var(--ink-soft);border:1px solid var(--line);font-size:11px;padding:0 4px}
+.nat{font-size:13px;color:var(--ink-soft);flex:none;max-width:46%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.club-tag{font-size:12px;font-weight:700;padding:1px 6px;border-radius:4px;background:var(--c1);color:var(--c1ink);flex:none}
+.slot.found{background:var(--turf-soft)}
+.slot.found .name{color:var(--ink)}
+.slot.missed{background:var(--miss-soft)}
+.slot.missed .name{color:var(--miss)}
+.slot.fresh{animation:fresh 1.6s ease-out}
+@keyframes fresh{0%{background:var(--gold)}100%{}}
+
+.pos-section{margin-bottom:22px}
+.pos-section h2{font-family:var(--cond);font-weight:700;font-size:26px;margin:0 0 10px;display:flex;gap:12px;align-items:baseline}
+.pos-section h2 span{font-family:var(--body);font-size:15px;font-weight:600;color:var(--ink-soft)}
+.pos-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:4px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:8px}
+
+.empty{padding:40px;text-align:center;color:var(--ink-soft);background:var(--card);border:1px dashed var(--line);border-radius:12px}
+.note{margin-top:28px;font-size:13px;color:var(--ink-soft);max-width:70ch}
+
+/* end screen */
+.result{display:none;margin-bottom:18px;padding:16px 18px;border-radius:12px;background:var(--card);border:2px solid var(--turf)}
+.result.show{display:block}
+.result h3{margin:0 0 4px;font-family:var(--cond);font-size:26px}
+.result p{margin:0;color:var(--ink-soft)}
+
+@media (max-width:760px){
+  .board-inner{grid-template-columns:1fr auto;padding:10px 12px}
+  .title{grid-column:1/-1;font-size:22px}
+  .title small{display:none}
+  .entry{grid-column:1/2}
+  .entry input{height:46px;font-size:18px}
+  .stats{gap:12px}
+  .stat b{font-size:26px}
+  .board-actions{margin-top:16px}
+  main{padding:16px 12px 48px}
+  .grid{grid-template-columns:1fr}
+}
+@media (prefers-reduced-motion: reduce){
+  *{animation:none!important;transition:none!important}
+}
+</style>
+</head>
+<body>
+
+<header class="board">
+  <div class="board-inner">
+    <h1 class="title">Name every Prem player<small>2026/27 squads plus notable Under-21s</small></h1>
+    <div class="entry" id="entry">
+      <input id="answer" type="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Type a player's name…" aria-label="Type a player's name">
+      <div class="feedback" id="feedback" aria-live="polite"></div>
+    </div>
+    <div class="stats">
+      <div class="stat"><b id="score">0/0</b><span>named</span></div>
+      <div class="stat timer" id="timerBox"><b id="timer">0:00</b><span id="timerLabel">elapsed</span></div>
+    </div>
+    <div class="progress"><i id="bar"></i></div>
+    <div class="board-actions">
+      <button class="btn primary" id="startBtn">Start</button>
+      <button class="btn danger" id="giveUpBtn">Give up</button>
+      <button class="btn" id="resetBtn">Reset</button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="result" id="result"><h3 id="resultTitle"></h3><p id="resultText"></p></div>
+
+  <div class="controls">
+    <div class="group">
+      <span class="group-label">Group by</span>
+      <div class="seg" id="groupSeg" role="group" aria-label="Group by">
+        <button data-v="club" aria-pressed="true">Club</button>
+        <button data-v="pos" aria-pressed="false">Position</button>
+      </div>
+    </div>
+    <div class="group">
+      <span class="group-label">Hints</span>
+      <div class="toggles">
+        <label class="toggle"><input type="checkbox" id="showNat"> Nationality</label>
+        <label class="toggle"><input type="checkbox" id="showPos"> Position</label>
+      </div>
+    </div>
+    <div class="group">
+      <label for="limit">Time limit</label>
+      <select id="limit">
+        <option value="0">None (stopwatch)</option>
+        <option value="5">5 minutes</option>
+        <option value="10">10 minutes</option>
+        <option value="15">15 minutes</option>
+        <option value="20">20 minutes</option>
+        <option value="30">30 minutes</option>
+        <option value="45">45 minutes</option>
+      </select>
+    </div>
+  </div>
+
+  <details class="clubs" id="clubBox">
+    <summary><span id="clubSummary">Clubs: all 20</span></summary>
+    <div class="chip-wrap">
+      <div class="chip-tools">
+        <button class="link" id="allClubs">Select all</button>
+        <button class="link" id="noClubs">Clear</button>
+      </div>
+      <div class="chips" id="chips"></div>
+    </div>
+  </details>
+
+  <div id="board"></div>
+
+  <p class="note">Squads are the 25-man lists clubs registered with the Premier League after the summer 2026 window closed (3 Sep 2026), plus Under-21s who have a first-team shirt number this season and are playing for the club (youngsters out on loan are left out). Under-21s are marked U21 once named. Accents, hyphens, apostrophes and capital letters are ignored when you type, so “martin odegaard” counts for Martin Ødegaard. Type the full name the player is known by (Gabriel, Alisson and Kepa work on their own). Your progress is saved in this browser.</p>
+</main>
+
+<script>
+/* ---------------- DATA ----------------
+   [display name, position, nationality, [extra accepted spellings]] */
+const CLUBS = [
+ {n:"Arsenal",c1:"#EF0107",c2:"#FFFFFF",p:[
+  ["David Raya","GK","Spain"],["Kepa Arrizabalaga","GK","Spain",["Kepa"]],["Illan Meslier","GK","France"],
+  ["William Saliba","DEF","France"],["Gabriel Magalhães","DEF","Brazil",["Gabriel"]],["Ben White","DEF","England",["Benjamin White"]],
+  ["Jurriën Timber","DEF","Netherlands"],["Riccardo Calafiori","DEF","Italy"],["Piero Hincapié","DEF","Ecuador"],
+  ["Ezri Konsa","DEF","England"],["Cristhian Mosquera","DEF","Spain"],
+  ["Declan Rice","MID","England"],["Martin Ødegaard","MID","Norway"],["Martín Zubimendi","MID","Spain"],
+  ["Mikel Merino","MID","Spain"],["Bruno Guimarães","MID","Brazil"],["Eberechi Eze","MID","England"],
+  ["Noni Madueke","MID","England"],["Kai Havertz","MID","Germany"],
+  ["Bukayo Saka","FWD","England"],["Viktor Gyökeres","FWD","Sweden"],["Christos Tzolis","FWD","Greece"]
+ ]},
+ {n:"Aston Villa",c1:"#670E36",c2:"#95BFE5",p:[
+  ["Zion Suzuki","GK","Japan"],["Marco Bizot","GK","Netherlands"],["James Wright","GK","England"],
+  ["Matty Cash","DEF","Poland",["Matthew Cash"]],["Victor Lindelöf","DEF","Sweden"],["Tyrone Mings","DEF","England"],
+  ["Pau Torres","DEF","Spain",["Pau Francisco Torres"]],["Ian Maatsen","DEF","Netherlands"],["Lamare Bogarde","DEF","Netherlands"],
+  ["Taylor Harwood-Bellis","DEF","England"],["Matteo Ruggeri","DEF","Italy"],["Aaron Wan-Bissaka","DEF","England"],
+  ["John McGinn","MID","Scotland"],["Boubacar Kamara","MID","France"],["Ross Barkley","MID","England"],
+  ["Emiliano Buendía","MID","Argentina"],["Amadou Onana","MID","Belgium"],["Leon Goretzka","MID","Germany"],
+  ["João Gomes","MID","Brazil"],
+  ["Nicolas Jackson","FWD","Senegal"],["Alejandro Garnacho","FWD","Argentina"],["Tammy Abraham","FWD","England"]
+ ]},
+ {n:"Bournemouth",c1:"#DA291C",c2:"#000000",p:[
+  ["Đorđe Petrović","GK","Serbia",["Djordje Petrovic"]],["Michele Di Gregorio","GK","Italy"],["Fraser Forster","GK","England"],
+  ["Adrien Truffert","DEF","France"],["James Hill","DEF","England"],["António Silva","DEF","Portugal"],
+  ["Adam Smith","DEF","England"],["Bafodé Diakité","DEF","France"],["Juanlu Sánchez","DEF","Spain",["Juanlu"]],
+  ["Max Aarons","DEF","England"],["Julián Araujo","DEF","Mexico"],
+  ["Lewis Cook","MID","England"],["Tyler Adams","MID","USA"],["Alex Scott","MID","England"],
+  ["Ryan Christie","MID","Scotland"],["Marcus Tavernier","MID","England"],["David Brooks","MID","Wales"],
+  ["Amine Adli","MID","Morocco"],["Ben Winterburn","MID","England"],
+  ["Evanilson","FWD","Brazil"],["Justin Kluivert","FWD","Netherlands"],["Álvaro Rodríguez","FWD","Uruguay"],
+  ["Daniel Jebbison","FWD","Canada"]
+ ]},
+ {n:"Brentford",c1:"#E30613",c2:"#FFFFFF",p:[
+  ["Caoimhín Kelleher","GK","Republic of Ireland"],["Hákon Valdimarsson","GK","Iceland",["Hakon Rafn Valdimarsson"]],["Ellery Balcombe","GK","England"],
+  ["Aaron Hickey","DEF","Scotland"],["Rico Henry","DEF","England"],["Sepp van den Berg","DEF","Netherlands"],
+  ["Kristoffer Ajer","DEF","Norway"],["Nathan Collins","DEF","Republic of Ireland"],["El Hadji Malick Diouf","DEF","Senegal",["Malick Diouf"]],
+  ["Michael Kayode","DEF","Italy"],["Kim Ji-soo","DEF","South Korea",["Ji-soo Kim","Jisoo Kim"]],["Caelan Avenell","DEF","England"],
+  ["Yehor Yarmoliuk","MID","Ukraine",["Yehor Yarmolyuk"]],["Kevin Schade","MID","Germany"],["Mathias Jensen","MID","Denmark"],
+  ["Josh Dasilva","MID","England"],["Fábio Carvalho","MID","Portugal"],["Mamadou Sangaré","MID","Mali"],
+  ["Jaidon Anthony","MID","England"],["Mikkel Damsgaard","MID","Denmark"],["Vitaly Janelt","MID","Germany"],
+  ["Igor Thiago","FWD","Brazil"],["Dango Ouattara","FWD","Burkina Faso"],["Keane Lewis-Potter","FWD","England"],
+  ["Callum Wilson","FWD","England"]
+ ]},
+ {n:"Brighton",c1:"#0057B8",c2:"#FFCD00",p:[
+  ["Bart Verbruggen","GK","Netherlands"],["Jason Steele","GK","England"],["Tom McGill","GK","Canada"],["James Beadle","GK","England"],
+  ["Jaouen Hadjam","DEF","Algeria"],["Pascal Struijk","DEF","Netherlands"],["Lewis Dunk","DEF","England"],
+  ["Costinha","DEF","Portugal"],["Olivier Boscagli","DEF","France"],["Ferdi Kadıoğlu","DEF","Turkey"],
+  ["Maxim De Cuyper","DEF","Belgium"],["Michael Svoboda","DEF","Austria"],
+  ["Pascal Groß","MID","Germany"],["Diego Gómez","MID","Paraguay"],["Yasin Ayari","MID","Sweden"],
+  ["Mats Wieffer","MID","Netherlands"],["Matt O'Riley","MID","Denmark",["Matthew O'Riley"]],["Femi Azeez","MID","England"],
+  ["Georginio Rutter","FWD","France"],["Yankuba Minteh","FWD","Gambia"],["Promise David","FWD","Canada"],
+  ["Ibrahim Osman","FWD","Ghana"],["Kaoru Mitoma","FWD","Japan"],["Evan Ferguson","FWD","Republic of Ireland"]
+ ]},
+ {n:"Chelsea",c1:"#034694",c2:"#DBA111",p:[
+  ["Emiliano Martínez","GK","Argentina",["Emi Martinez","Dibu Martinez"]],["Teddy Sharman-Lowe","GK","England"],["Gabriel Słonina","GK","USA"],
+  ["Wesley Fofana","DEF","France"],["Maxence Lacroix","DEF","France"],["Levi Colwill","DEF","England"],
+  ["Reece James","DEF","England"],["Malo Gusto","DEF","France"],["Pep Chavarría","DEF","Spain",["Josep Chavarria"]],
+  ["Valentín Barco","MID","Argentina"],["Pedro Neto","MID","Portugal"],["Cole Palmer","MID","England"],
+  ["Jordan Henderson","MID","England"],["Morgan Rogers","MID","England"],["Moisés Caicedo","MID","Ecuador"],
+  ["Roméo Lavia","MID","Belgium"],
+  ["João Pedro","FWD","Brazil"],["Jamie Gittens","FWD","England",["Jamie Bynoe-Gittens"]],["Danny Welbeck","FWD","England",["Daniel Welbeck"]],
+  ["Emmanuel Emegha","FWD","Netherlands"]
+ ]},
+ {n:"Coventry City",c1:"#59CBE8",c2:"#13203A",p:[
+  ["Carl Rushworth","GK","England"],["Ben Wilson","GK","England"],["Dan Bentley","GK","England",["Daniel Bentley"]],
+  ["Ethan Pinnock","DEF","Jamaica"],["Jay Dasilva","DEF","England"],["Bobby Thomas","DEF","England"],
+  ["Kaine Kesler-Hayden","DEF","England"],["Aurèle Amenda","DEF","Switzerland"],["Luke Woolfenden","DEF","England"],
+  ["Milan van Ewijk","DEF","Netherlands"],["Joel Latibeaudiere","DEF","Jamaica"],
+  ["Jack Rudoni","MID","England"],["Matt Grimes","MID","England",["Matthew Grimes"]],["Tatsuhiro Sakamoto","MID","Japan"],
+  ["Ephron Mason-Clark","MID","England"],["Frank Onyeka","MID","Nigeria"],["Josh Eccles","MID","England"],
+  ["Victor Torp","MID","Denmark"],["Gustavo Hamer","MID","Netherlands"],
+  ["Ellis Simms","FWD","England"],["Haji Wright","FWD","USA"],["Taiwo Awoniyi","FWD","Nigeria"],
+  ["Loum Tchaouna","FWD","France"],["Brandon Thomas-Asante","FWD","Ghana"]
+ ]},
+ {n:"Crystal Palace",c1:"#1B458F",c2:"#C4122E",p:[
+  ["Dean Henderson","GK","England"],["Remi Matthews","GK","England"],["Walter Benítez","GK","Argentina"],
+  ["Tyrick Mitchell","DEF","England"],["Axel Disasi","DEF","France"],["Takehiro Tomiyasu","DEF","Japan"],
+  ["Anan Khalaili","DEF","Israel"],["Chris Richards","DEF","USA"],["Óscar Mingueza","DEF","Spain"],
+  ["Ben Chilwell","DEF","England"],
+  ["Jefferson Lerma","MID","Colombia"],["Yeremy Pino","MID","Spain"],["Daichi Kamada","MID","Japan"],
+  ["Will Hughes","MID","England"],["Adam Wharton","MID","England"],["Quinten Timber","MID","Netherlands"],
+  ["Darío Osorio","MID","Chile"],["Cheick Doucouré","MID","Mali"],["Matheus França","MID","Brazil"],
+  ["Dwight McNeil","MID","England"],
+  ["Ismaïla Sarr","FWD","Senegal"],["Eddie Nketiah","FWD","England",["Edward Nketiah"]],["Jean-Philippe Mateta","FWD","France"],
+  ["Jørgen Strand Larsen","FWD","Norway",["Strand Larsen","Jorgen Larsen"]],["Evann Guessand","FWD","Côte d'Ivoire"]
+ ]},
+ {n:"Everton",c1:"#003399",c2:"#FFFFFF",p:[
+  ["Jordan Pickford","GK","England"],["Mark Travers","GK","Republic of Ireland"],["Tom King","GK","Wales"],
+  ["Fraser Barnsley","GK","Northern Ireland"],
+  ["Jarrad Branthwaite","DEF","England"],["Michael Keane","DEF","England"],["James Tarkowski","DEF","England"],
+  ["Jake O'Brien","DEF","Republic of Ireland"],["Vitaliy Mykolenko","DEF","Ukraine",["Vitalii Mykolenko"]],["Merlin Röhl","DEF","Germany"],
+  ["Ainsley Maitland-Niles","DEF","England"],
+  ["Kiernan Dewsbury-Hall","MID","England"],["Jack Grealish","MID","England"],["Christian Nørgaard","MID","Denmark"],
+  ["Charly Alcaraz","MID","Argentina",["Carlos Alcaraz"]],["Hayden Hackney","MID","Scotland"],["James Garner","MID","England"],
+  ["Thierno Barry","FWD","France"],["Brennan Johnson","FWD","Wales"]
+ ]},
+ {n:"Fulham",c1:"#111111",c2:"#FFFFFF",p:[
+  ["Bernd Leno","GK","Germany"],["Benjamin Lecomte","GK","France"],["Michael Allen","GK","England",["Mikey Allen"]],
+  ["Kenny Tete","DEF","Netherlands"],["Calvin Bassey","DEF","Nigeria"],["Jorge Cuenca","DEF","Spain"],
+  ["Joachim Andersen","DEF","Denmark"],["Timothy Castagne","DEF","Belgium"],["David Affengruber","DEF","Austria"],
+  ["Antonee Robinson","DEF","USA"],["Ryan Sessegnon","DEF","England"],
+  ["Harrison Reed","MID","England"],["César Palacios","MID","Spain"],["Tom Cairney","MID","Scotland"],
+  ["Oscar Bobb","MID","Norway"],["Hugo Larsson","MID","Sweden"],["Sander Berge","MID","Norway"],
+  ["Alex Iwobi","MID","Nigeria",["Alexander Iwobi"]],["Shea Charles","MID","Northern Ireland"],["Manuel Ángel","MID","Spain"],
+  ["Emile Smith Rowe","MID","England"],
+  ["Gonzalo García","FWD","Spain"],["Rodrigo Muniz","FWD","Brazil"],["Kevin","FWD","Brazil",["Kevin Santos"]],
+  ["Terrell Works","FWD","England"]
+ ]},
+ {n:"Hull City",c1:"#F5A12D",c2:"#111111",p:[
+  ["Jack Butland","GK","England"],["Dillon Phillips","GK","England"],["Konstantinos Tzolakis","GK","Greece"],
+  ["Lewie Coyle","DEF","England"],["Ryan Giles","DEF","England"],["Charlie Hughes","DEF","England"],
+  ["Semi Ajayi","DEF","Nigeria"],["John Egan","DEF","Republic of Ireland"],["Paddy McNair","DEF","Northern Ireland",["Patrick McNair"]],
+  ["Brooke Norton-Cuffy","DEF","England"],["Matt Targett","DEF","England",["Matthew Targett"]],["Nobel Mendy","DEF","France"],
+  ["Hidemasa Morita","MID","Japan"],["Mohamed Belloumi","MID","Algeria"],["Elliot Stroud","MID","Sweden"],
+  ["Matt Crooks","MID","England"],["Regan Slater","MID","England"],["Lucas Gourna-Douath","MID","France"],
+  ["Abdülkadir Ömür","MID","Turkey"],["Tim Iroegbunam","MID","England",["Timothy Iroegbunam"]],
+  ["Sorba Thomas","FWD","Wales"],["Oli McBurnie","FWD","Scotland",["Oliver McBurnie"]],["Joe Gelhardt","FWD","England"],
+  ["Mohamed-Ali Cho","FWD","France"],["Ilyas Ansah","FWD","Germany"]
+ ]},
+ {n:"Ipswich Town",c1:"#3A64A3",c2:"#FFFFFF",p:[
+  ["Alex Palmer","GK","England"],["Christian Walton","GK","England"],["Kjell Scherpen","GK","Netherlands"],
+  ["Darnell Furlong","DEF","England"],["Leif Davis","DEF","England"],["Cédric Kipré","DEF","Côte d'Ivoire"],
+  ["Issa Diop","DEF","France"],["Jacob Greaves","DEF","England"],["Dara O'Shea","DEF","Republic of Ireland"],
+  ["Azor Matusiwa","MID","Netherlands"],["Abdul Fatawu","MID","Ghana",["Issahaku Fatawu"]],["Julio Enciso","MID","Paraguay"],
+  ["Jaden Philogene","MID","England"],["Florentino","MID","Portugal",["Florentino Luis"]],["Jack Taylor","MID","Republic of Ireland"],
+  ["Saša Lukić","MID","Serbia"],["Exequiel Palacios","MID","Argentina"],["Marcelino Núñez","MID","Chile"],
+  ["Zian Flemming","FWD","Netherlands"],["Emersonn","FWD","Brazil"],["Kasey McAteer","FWD","England"],
+  ["Chuba Akpom","FWD","England"],["Anis Mehmeti","FWD","Albania"],["Daizen Maeda","FWD","Japan"],
+  ["Jack Clarke","FWD","England"]
+ ]},
+ {n:"Leeds United",c1:"#FFCD00",c2:"#1D428A",p:[
+  ["James Trafford","GK","England"],["Michael Zetterer","GK","Germany"],["Alex Cairns","GK","England"],
+  ["Tarik Muharemović","DEF","Bosnia and Herzegovina"],["Joe Rodon","DEF","Wales"],["Jaka Bijol","DEF","Slovenia"],
+  ["James Justin","DEF","England"],["Melvin Bard","DEF","France"],["Nico Elvedi","DEF","Switzerland"],
+  ["Jayden Bogle","DEF","England"],["Gabriel Gudmundsson","DEF","Sweden"],
+  ["Ethan Ampadu","MID","Wales"],["Sean Longstaff","MID","England"],["Anton Stach","MID","Germany"],
+  ["Ao Tanaka","MID","Japan"],["Ilia Gruev","MID","Bulgaria"],
+  ["Dominic Calvert-Lewin","FWD","England"],["Harry Wilson","FWD","Wales"],["Brenden Aaronson","FWD","USA"],
+  ["Lukas Nmecha","FWD","Germany"],["Noah Okafor","FWD","Switzerland"],["Daniel James","FWD","Wales",["Dan James"]],
+  ["Mateo Joseph","FWD","England"]
+ ]},
+ {n:"Liverpool",c1:"#C8102E",c2:"#00B2A9",p:[
+  ["Alisson Becker","GK","Brazil",["Alisson"]],["Giorgi Mamardashvili","GK","Georgia"],["Freddie Woodman","GK","England"],
+  ["Vítězslav Jaroš","GK","Czechia"],
+  ["Joe Gomez","DEF","England"],["Virgil van Dijk","DEF","Netherlands"],["Milos Kerkez","DEF","Hungary"],
+  ["Conor Bradley","DEF","Northern Ireland"],["Kostas Tsimikas","DEF","Greece",["Konstantinos Tsimikas"]],["Ronald Araújo","DEF","Uruguay"],
+  ["Luke Chambers","DEF","England"],["Jeremie Frimpong","DEF","Netherlands"],["Isaac Mabaya","DEF","England"],
+  ["Wataru Endo","MID","Japan"],["Florian Wirtz","MID","Germany"],["Dominik Szoboszlai","MID","Hungary"],
+  ["Alexis Mac Allister","MID","Argentina"],["Ryan Gravenberch","MID","Netherlands"],["James McConnell","MID","England"],
+  ["Alexander Isak","FWD","Sweden"],["Federico Chiesa","FWD","Italy"],["Cody Gakpo","FWD","Netherlands"],
+  ["Hugo Ekitiké","FWD","France"],["Víctor Muñoz","FWD","Spain"],["Bradley Barcola","FWD","France"]
+ ]},
+ {n:"Manchester City",c1:"#6CABDD",c2:"#1C2C5B",p:[
+  ["Gianluigi Donnarumma","GK","Italy"],["Marcus Bettinelli","GK","England"],["Gerónimo Rulli","GK","Argentina"],
+  ["Rúben Dias","DEF","Portugal"],["Marc Guéhi","DEF","England"],["Rayan Aït-Nouri","DEF","Algeria"],
+  ["Joško Gvardiol","DEF","Croatia"],["Matheus Nunes","DEF","Portugal"],["Abdukodir Khusanov","DEF","Uzbekistan"],
+  ["Rico Lewis","DEF","England"],
+  ["Elliot Anderson","MID","England"],["Mateo Kovačić","MID","Croatia"],["Rayan Cherki","MID","France"],
+  ["Enzo Fernández","MID","Argentina"],["Phil Foden","MID","England",["Philip Foden"]],
+  ["Erling Haaland","FWD","Norway"],["Iliman Ndiaye","FWD","Senegal"],["Jérémy Doku","FWD","Belgium"],
+  ["Allan","FWD","Brazil",["Allan Elias"]],["Antoine Semenyo","FWD","Ghana"]
+ ]},
+ {n:"Manchester United",c1:"#DA291C",c2:"#FBE122",p:[
+  ["Senne Lammens","GK","Belgium"],["Karl Darlow","GK","Wales"],["Tom Heaton","GK","England"],["Dermot Mee","GK","Northern Ireland"],
+  ["Diogo Dalot","DEF","Portugal"],["Noussair Mazraoui","DEF","Morocco"],["Matthijs de Ligt","DEF","Netherlands"],
+  ["Harry Maguire","DEF","England"],["Lisandro Martínez","DEF","Argentina"],["Patrick Dorgu","DEF","Denmark"],
+  ["Luke Shaw","DEF","England"],
+  ["Mason Mount","MID","England"],["Bruno Fernandes","MID","Portugal"],["Amad Diallo","MID","Côte d'Ivoire",["Amad"]],
+  ["Andrey Santos","MID","Brazil"],["Youri Tielemans","MID","Belgium"],["Carlos Baleba","MID","Cameroon"],
+  ["Manuel Ugarte","MID","Uruguay"],
+  ["Marcus Rashford","FWD","England"],["Matheus Cunha","FWD","Brazil"],["Joshua Zirkzee","FWD","Netherlands"],
+  ["Bryan Mbeumo","FWD","Cameroon"],["Benjamin Šeško","FWD","Slovenia",["Ben Sesko"]]
+ ]},
+ {n:"Newcastle United",c1:"#241F20",c2:"#FFFFFF",p:[
+  ["Nick Pope","GK","England"],["Lukáš Horníček","GK","Czechia"],["Mark Gillespie","GK","England"],
+  ["Tino Livramento","DEF","England",["Valentino Livramento"]],["Lewis Hall","DEF","England"],["Sven Botman","DEF","Netherlands"],
+  ["Fabian Schär","DEF","Switzerland"],["Malick Thiaw","DEF","Germany"],["Dan Burn","DEF","England",["Daniel Burn"]],
+  ["Amar Dedić","DEF","Bosnia and Herzegovina"],
+  ["Nico González","MID","Spain"],["Joelinton","MID","Brazil"],["Harvey Barnes","MID","England"],
+  ["Jacob Murphy","MID","England"],["Joe Willock","MID","England"],["Jacob Ramsey","MID","England"],
+  ["Yoane Wissa","FWD","DR Congo"],["Will Osula","FWD","Denmark",["William Osula"]],["Anthony Elanga","FWD","Sweden"]
+ ]},
+ {n:"Nottingham Forest",c1:"#DD0000",c2:"#FFFFFF",p:[
+  ["Matz Sels","GK","Belgium"],["John Victor","GK","Brazil"],["Steven Benda","GK","Germany"],["Aaron Bott","GK","England"],
+  ["Ousmane Diomande","DEF","Côte d'Ivoire"],["Murillo","DEF","Brazil"],["Morato","DEF","Brazil"],
+  ["Nikola Milenković","DEF","Serbia"],["Ola Aina","DEF","Nigeria"],["Nicolò Savona","DEF","Italy"],
+  ["Luca Netz","DEF","Germany"],["Neco Williams","DEF","Wales"],["Daniel Muñoz","DEF","Colombia"],
+  ["Ibrahim Sangaré","MID","Côte d'Ivoire"],["Nicolás Domínguez","MID","Argentina"],["Xaver Schlager","MID","Austria"],
+  ["Ryan Yates","MID","England"],["James McAtee","MID","England"],["Morgan Gibbs-White","MID","England"],
+  ["Callum Hudson-Odoi","FWD","England"],["Chris Wood","FWD","New Zealand"],["Igor Jesus","FWD","Brazil"],
+  ["Dan Ndoye","FWD","Switzerland"],["Arnaud Kalimuendo","FWD","France"],["Liam Delap","FWD","England"]
+ ]},
+ {n:"Sunderland",c1:"#EB172B",c2:"#FFFFFF",p:[
+  ["Robin Roefs","GK","Netherlands"],["Simon Moore","GK","England"],["Melker Ellborg","GK","Sweden"],
+  ["Kevin Danso","DEF","Austria"],["Dan Ballard","DEF","Northern Ireland",["Daniel Ballard"]],["Thomas Meunier","DEF","Belgium"],
+  ["Omar Alderete","DEF","Paraguay"],["Reinildo Mandava","DEF","Mozambique",["Reinildo"]],["Nordi Mukiele","DEF","France"],
+  ["Trai Hume","DEF","Northern Ireland"],["Aji Alese","DEF","England",["Ajibola Alese"]],
+  ["Alan Browne","MID","Republic of Ireland"],["Luke O'Nien","MID","England"],["Nilson Angulo","MID","Ecuador"],
+  ["Habib Diarra","MID","Senegal"],["Noah Sadiki","MID","DR Congo"],["Enzo Le Fée","MID","France"],
+  ["Granit Xhaka","MID","Switzerland"],["Abdoullah Ba","MID","France"],
+  ["Brian Brobbey","FWD","Netherlands"],["Wilson Isidor","FWD","France"],["Romaine Mundle","FWD","England"]
+ ]},
+ {n:"Tottenham Hotspur",c1:"#132257",c2:"#FFFFFF",p:[
+  ["Antonín Kinský","GK","Czechia"],["Martin Dúbravka","GK","Slovakia"],["Brandon Austin","GK","England"],
+  ["Jacob Knightbridge","GK","England"],
+  ["Andy Robertson","DEF","Scotland",["Andrew Robertson"]],["Tosin Adarabioyo","DEF","England"],["Marcos Senesi","DEF","Argentina"],
+  ["Jan Paul van Hecke","DEF","Netherlands"],["Destiny Udogie","DEF","Italy"],["Pedro Porro","DEF","Spain"],
+  ["Ben Davies","DEF","Wales"],["Micky van de Ven","DEF","Netherlands"],
+  ["Xavi Simons","MID","Netherlands"],["Conor Gallagher","MID","England"],["James Maddison","MID","England"],
+  ["Sandro Tonali","MID","Italy"],["Mateus Fernandes","MID","Portugal"],["Mohammed Kudus","MID","Ghana"],
+  ["Dejan Kulusevski","MID","Sweden"],["Rodrigo Bentancur","MID","Uruguay"],
+  ["Omar Marmoush","FWD","Egypt"],["Sávio","FWD","Brazil",["Savinho"]],["Dominic Solanke","FWD","England",["Dom Solanke"]],
+  ["Mykhailo Mudryk","FWD","Ukraine"],["Wilson Odobert","FWD","France"]
+ ]}
+];
+
+/* Notable Under-21s: registered outside the 25-man list, with a first-team shirt number for 2026/27 */
+const U21 = {
+ "Arsenal":[["Myles Lewis-Skelly","DEF","England"],["Ethan Nwaneri","MID","England"],["Max Dowman","FWD","England"]],
+ "Aston Villa":[["Modou Keba Cissé","DEF","Senegal"],["Johan Manzambi","MID","Switzerland"],["Ibrahim Mbaye","MID","France"],
+  ["Alysson","FWD","Brazil",["Alysson Edward"]],["George Hemmings","FWD","England"],["Brian Madjo","FWD","England"]],
+ "Bournemouth":[["Julio Soler","DEF","Argentina"],["Veljko Milosavljević","DEF","Serbia"],["Alex Tóth","MID","Hungary"],
+  ["Ben Gannon-Doak","MID","Scotland",["Ben Doak"]],["Rayan","FWD","Brazil"],["Junior Kroupi","FWD","France",["Eli Junior Kroupi"]]],
+ "Brentford":[["Jannik Schuster","DEF","Austria"],["Antoni Milambo","MID","Netherlands"],["Gustavo Nunes","FWD","Brazil"]],
+ "Brighton":[["Luka Vušković","DEF","Croatia"],["Jack Hinshelwood","MID","England"],["Chema Andrés","MID","Spain"],
+  ["Malick Yalcouyé","MID","Mali"],["Charalampos Kostoulas","FWD","Greece",["Babis Kostoulas"]],["Stefanos Tzimas","FWD","Greece"],
+  ["Zadok Yohanna","FWD","Nigeria"]],
+ "Chelsea":[["Mike Penders","GK","Belgium"],["Josh Acheampong","DEF","England",["Joshua Acheampong"]],["Jorrel Hato","DEF","Netherlands"],
+  ["Marco Palestra","DEF","Italy"],["Aaron Anselmino","DEF","Argentina"],["Geovany Quenda","MID","Portugal"],
+  ["Mahdi Nicoll-Jazuli","MID","England"],["Estêvão","FWD","Brazil",["Estevao Willian"]]],
+ "Coventry City":[["Stephen Mfuni","DEF","England"],["Caleb Yirenkyi","MID","Ghana"],["Sidiki Chérif","FWD","France"]],
+ "Crystal Palace":[["Jaydee Canvot","DEF","France"],["Honest Ahanor","DEF","Italy"],["Zavier Gozo","FWD","USA"]],
+ "Everton":[["Tyrique George","MID","England"],["Harrison Armstrong","MID","England"],["Tyler Dibling","FWD","England"]],
+ "Fulham":[["Luc de Fougerolles","DEF","Canada"],["Josh King","MID","England",["Joshua King"]],["Jonah Kusi-Asare","FWD","Sweden"]],
+ "Hull City":[["Lucas Herrington","DEF","Australia"],["Jens Hjertø-Dahl","MID","Norway"]],
+ "Ipswich Town":[["Sindre Egeli","FWD","Norway"]],
+ "Leeds United":[["Jean-Matteo Bahoya","FWD","France"]],
+ "Liverpool":[["Jérémy Jacquet","DEF","France"],["Giovanni Leoni","DEF","Italy"],["Trey Nyoni","MID","England"],
+  ["Lewis Koumas","MID","Wales"],["Rio Ngumoha","FWD","England"],["Jayden Danns","FWD","England"]],
+ "Manchester City":[["Vitor Reis","DEF","Brazil"],["Nico O'Reilly","DEF","England"],["Kaden Braithwaite","DEF","England"],
+  ["Ayyoub Bouaddi","MID","France"],["Claudio Echeverri","MID","Argentina"],["Ryan McAidoo","FWD","England"]],
+ "Manchester United":[["Leny Yoro","DEF","France"],["Ayden Heaven","DEF","England"],["Harry Amass","DEF","England"],
+  ["Kobbie Mainoo","MID","England"],["Jack Fletcher","MID","England"],["Tyler Fletcher","MID","Scotland"],["Shea Lacey","FWD","England"]],
+ "Newcastle United":[["Ewen Jaouen","GK","France"],["Lewis Miley","MID","England"],["Sean Steur","MID","Netherlands"],
+  ["Bazoumana Touré","MID","Côte d'Ivoire"],["Aladji Bamba","MID","France"],["Matías Fernández-Pardo","FWD","Belgium"]],
+ "Nottingham Forest":[["Jair Cunha","DEF","Brazil",["Jair"]]],
+ "Sunderland":[["Dayann Methalie","DEF","France"],["Chris Rigg","MID","England"],["Chemsdine Talbi","MID","Morocco"],
+  ["Jules Ahoka","MID","DR Congo"],["Malick Fofana","MID","Belgium"],["Jocelin Ta Bi","MID","Côte d'Ivoire"],
+  ["Tymur Tutierov","FWD","Ukraine",["Timur Tutierov","Timur Tuterov"]]],
+ "Tottenham Hotspur":[["Archie Gray","DEF","England"],["Lucas Bergvall","MID","Sweden"],["Mathys Tel","FWD","France"],
+  ["Luca Williams-Barnett","FWD","England"]]
+};
+CLUBS.forEach(c=>{ (U21[c.n]||[]).forEach(row=>c.p.push([row[0],row[1],row[2],row[3]||[],true])); });
+
+/* ---------------- HELPERS ---------------- */
+const SPECIAL = {"ø":"o","æ":"ae","œ":"oe","ß":"ss","đ":"d","ð":"d","þ":"th","ł":"l","ı":"i","ħ":"h"};
+function norm(s){
+  s = s.toLowerCase().replace(/[øæœßđðþłıħ]/g, ch => SPECIAL[ch]);
+  return s.normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z]/g,"");
+}
+const POS_ORDER = {GK:0,DEF:1,MID:2,FWD:3};
+const POS_NAME = {GK:"Goalkeepers",DEF:"Defenders",MID:"Midfielders",FWD:"Forwards"};
+function inkFor(hex){
+  const n = parseInt(hex.slice(1),16), r=n>>16&255, g=n>>8&255, b=n&255;
+  return (0.299*r+0.587*g+0.114*b) > 160 ? "#13203A" : "#FFFFFF";
+}
+function hash(str){let h=2166136261;for(const ch of str){h^=ch.charCodeAt(0);h=Math.imul(h,16777619)}return h>>>0}
+const $ = id => document.getElementById(id);
+
+/* Build players + answer index */
+const PLAYERS = [];
+CLUBS.forEach((c,ci)=>{
+  c.ink = inkFor(c.c1);
+  c.p.forEach(([name,pos,nat,alts,u21])=>{
+    const id = ci+":"+norm(name);
+    const keys = new Set([norm(name), ...(alts||[]).map(norm)]);
+    PLAYERS.push({id,name,pos,nat,ci,u21:!!u21,keys:[...keys],h:hash(id)});
+  });
+});
+const BY_ID = Object.fromEntries(PLAYERS.map(p=>[p.id,p]));
+const KEY_LIST = []; // [key, player]
+PLAYERS.forEach(p=>p.keys.forEach(k=>KEY_LIST.push([k,p])));
+
+/* ---------------- STATE ---------------- */
+const STORE = "prem-quiz-2627-v1";
+const state = {
+  found:new Set(), order:[], elapsed:0, running:false, over:false, gaveUp:false,
+  showNat:false, showPos:false, group:"club", limit:0,
+  clubs:new Set(CLUBS.map((_,i)=>i))
+};
+let lastTick = 0, timerId = null, freshId = null;
+
+function save(){
+  try{
+    localStorage.setItem(STORE, JSON.stringify({
+      found:[...state.order], elapsed:state.elapsed, over:state.over, gaveUp:state.gaveUp,
+      showNat:state.showNat, showPos:state.showPos, group:state.group, limit:state.limit, clubs:[...state.clubs]
+    }));
+  }catch(e){}
+}
+function load(){
+  try{
+    const d = JSON.parse(localStorage.getItem(STORE)||"null");
+    if(!d) return;
+    (d.found||[]).forEach(id=>{ if(BY_ID[id]){ state.found.add(id); state.order.push(id);} });
+    Object.assign(state,{elapsed:d.elapsed||0,over:!!d.over,gaveUp:!!d.gaveUp,showNat:!!d.showNat,showPos:!!d.showPos,
+      group:d.group==="pos"?"pos":"club",limit:+d.limit||0});
+    if(Array.isArray(d.clubs)) state.clubs = new Set(d.clubs.filter(i=>CLUBS[i]));
+  }catch(e){}
+}
+
+/* ---------------- TIMER ---------------- */
+function fmt(ms){
+  const s = Math.max(0,Math.round(ms/1000)), m = Math.floor(s/60), r = s%60;
+  return m+":"+String(r).padStart(2,"0");
+}
+function remaining(){ return state.limit*60000 - state.elapsed; }
+function drawTimer(){
+  const box = $("timerBox");
+  if(state.limit){
+    $("timer").textContent = fmt(remaining());
+    $("timerLabel").textContent = "left";
+    box.classList.toggle("low", remaining() <= 60000 && !state.over);
+  }else{
+    $("timer").textContent = fmt(state.elapsed);
+    $("timerLabel").textContent = "elapsed";
+    box.classList.remove("low");
+  }
+}
+function start(){
+  if(state.over || state.running) return;
+  state.running = true; lastTick = performance.now();
+  timerId = setInterval(tick, 250);
+  syncButtons();
+}
+function pause(){
+  if(!state.running) return;
+  tick(); state.running = false; clearInterval(timerId); syncButtons(); save();
+}
+function tick(){
+  const now = performance.now();
+  state.elapsed += now - lastTick; lastTick = now;
+  if(state.limit && remaining() <= 0){ state.elapsed = state.limit*60000; drawTimer(); finish(false); return; }
+  drawTimer();
+  if(Math.floor(state.elapsed/1000)%5===0) save();
+}
+
+/* ---------------- GAME ---------------- */
+function activePlayers(){ return PLAYERS.filter(p=>state.clubs.has(p.ci)); }
+function foundActive(){ return activePlayers().filter(p=>state.found.has(p.id)).length; }
+
+function matchesFor(k){
+  // unfound, in selected clubs, whose keys equal k
+  return KEY_LIST.filter(([key,p])=>key===k && state.clubs.has(p.ci) && !state.found.has(p.id)).map(x=>x[1]);
+}
+function isPrefixOfOther(k){
+  return KEY_LIST.some(([key,p])=>key!==k && key.startsWith(k) && state.clubs.has(p.ci) && !state.found.has(p.id));
+}
+function accept(players){
+  const uniq = [...new Map(players.map(p=>[p.id,p])).values()];
+  uniq.forEach(p=>{ state.found.add(p.id); state.order.push(p.id); });
+  freshId = uniq[uniq.length-1].id;
+  const names = uniq.map(p=>p.name+", "+CLUBS[p.ci].n).join(" and ");
+  feedback(names, "ok");
+  $("answer").value = "";
+  render(); save();
+  if(foundActive() === activePlayers().length) finish(true);
+}
+function feedback(msg, cls){
+  const f = $("feedback"); f.textContent = msg; f.className = "feedback " + (cls||"");
+}
+function onInput(){
+  if(state.over) return;
+  const raw = $("answer").value, k = norm(raw);
+  if(!k){ feedback(""); return; }
+  if(!state.running) start();
+  const m = matchesFor(k);
+  if(m.length){
+    if(isPrefixOfOther(k)) feedback("Press Enter to lock in "+m[0].name+", or keep typing", "warn");
+    else accept(m);
+  }else if(feedbackIsHint()){ feedback(""); }
+}
+function feedbackIsHint(){ return $("feedback").classList.contains("warn"); }
+function onKey(e){
+  if(e.key !== "Enter") return;
+  e.preventDefault();
+  if(state.over) return;
+  const k = norm($("answer").value);
+  if(!k) return;
+  const m = matchesFor(k);
+  if(m.length){ accept(m); return; }
+  const already = KEY_LIST.find(([key,p])=>key===k && state.found.has(p.id));
+  if(already) feedback(already[1].name+" is already on the board", "warn");
+  else if(KEY_LIST.some(([key,p])=>key===k)) feedback("That player's club is filtered out", "warn");
+  else feedback("Not a registered Prem player this season", "warn");
+  const en = $("entry"); en.classList.remove("shake"); void en.offsetWidth; en.classList.add("shake");
+}
+function finish(complete){
+  pause();
+  state.over = true; state.gaveUp = !complete;
+  $("answer").disabled = true;
+  render(); save(); syncButtons();
+}
+function giveUp(){
+  if(state.over) return;
+  if(!confirm("Give up and reveal everyone you missed?")) return;
+  finish(false);
+}
+function reset(){
+  if(state.found.size && !confirm("Clear all answers and the timer?")) return;
+  pause();
+  state.found.clear(); state.order = []; state.elapsed = 0; state.over = false; state.gaveUp = false; freshId = null;
+  $("answer").disabled = false; $("answer").value = ""; feedback("");
+  drawTimer(); render(); save(); syncButtons(); $("answer").focus();
+}
+function syncButtons(){
+  const sb = $("startBtn");
+  sb.textContent = state.running ? "Pause" : (state.elapsed > 0 && !state.over ? "Resume" : "Start");
+  sb.disabled = state.over;
+  $("giveUpBtn").disabled = state.over;
+  $("limit").disabled = state.running || (state.elapsed > 0 && !state.over);
+}
+
+/* ---------------- RENDER ---------------- */
+function slotHTML(p, opts){
+  const found = state.found.has(p.id);
+  const missed = !found && state.over;
+  const showName = found || missed;
+  const cls = "slot" + (found?" found":"") + (missed?" missed":"") + (p.id===freshId?" fresh":"");
+  let h = `<li class="${cls}">`;
+  if(state.showPos || state.over || found) h += `<span class="tag pos ${p.pos}">${p.pos}</span>`;
+  if(opts.club){
+    const c = CLUBS[p.ci];
+    h += `<span class="club-tag" style="--c1:${c.c1};--c1ink:${c.ink}">${clubShort(c.n)}</span>`;
+  }
+  h += showName ? `<span class="name">${p.name}</span>` : `<span class="blank"></span>`;
+  if(p.u21 && showName) h += `<span class="tag u21">U21</span>`;
+  if(state.showNat || state.over || found) h += `<span class="nat">${p.nat}</span>`;
+  return h + `</li>`;
+}
+const SHORT = {"Arsenal":"ARS","Aston Villa":"AVL","Bournemouth":"BOU","Brentford":"BRE","Brighton":"BHA","Chelsea":"CHE",
+ "Coventry City":"COV","Crystal Palace":"CRY","Everton":"EVE","Fulham":"FUL","Hull City":"HUL","Ipswich Town":"IPS",
+ "Leeds United":"LEE","Liverpool":"LIV","Manchester City":"MCI","Manchester United":"MUN","Newcastle United":"NEW",
+ "Nottingham Forest":"NFO","Sunderland":"SUN","Tottenham Hotspur":"TOT"};
+function clubShort(n){ return SHORT[n] || n.slice(0,3).toUpperCase(); }
+
+function sortPlayers(list){
+  // With positions shown: team-sheet order. Hidden: a fixed shuffle so the order gives nothing away.
+  return list.slice().sort((a,b)=>
+    (state.showPos || state.over) ? (POS_ORDER[a.pos]-POS_ORDER[b.pos] || a.h-b.h) : a.h-b.h);
+}
+
+function render(){
+  const act = activePlayers(), total = act.length, got = foundActive();
+  $("score").textContent = got+"/"+total;
+  $("bar").style.width = total ? (got/total*100)+"%" : "0";
+  const n = state.clubs.size;
+  $("clubSummary").textContent = n===CLUBS.length ? "Clubs: all 20" : n===0 ? "Clubs: none selected" : `Clubs: ${n} of 20 selected`;
+
+  // result banner
+  const r = $("result");
+  if(state.over){
+    r.classList.add("show");
+    const pct = total ? Math.round(got/total*100) : 0;
+    $("resultTitle").textContent = got===total ? "Full house. Every player named." : `You named ${got} of ${total} (${pct}%)`;
+    $("resultText").textContent = (state.limit && !state.gaveUp && got!==total ? "Time's up. " : "") +
+      `Time: ${fmt(state.elapsed)}. Missed players are shown in red. Press Reset to play again.`;
+    r.style.borderColor = got===total ? "var(--turf)" : "var(--miss)";
+  }else r.classList.remove("show");
+
+  const board = $("board");
+  if(!n){ board.innerHTML = `<div class="empty">Pick at least one club above to start naming players.</div>`; return; }
+
+  if(state.group === "club"){
+    let html = `<div class="grid">`;
+    CLUBS.forEach((c,ci)=>{
+      if(!state.clubs.has(ci)) return;
+      const ps = sortPlayers(PLAYERS.filter(p=>p.ci===ci));
+      const g = ps.filter(p=>state.found.has(p.id)).length;
+      html += `<section class="team${g===ps.length?" done":""}" style="--c1:${c.c1};--c2:${c.c2};--c1ink:${c.ink}">
+        <div class="team-head"><span class="crest"></span><h2>${c.n}</h2><span class="count">${g}/${ps.length}</span></div>
+        <div class="team-bar"><i style="width:${g/ps.length*100}%"></i></div>
+        <ol class="slots">${ps.map(p=>slotHTML(p,{club:false})).join("")}</ol></section>`;
+    });
+    board.innerHTML = html + `</div>`;
+  }else{
+    let html = "";
+    ["GK","DEF","MID","FWD"].forEach(pos=>{
+      const ps = act.filter(p=>p.pos===pos).sort((a,b)=>a.ci-b.ci || a.h-b.h);
+      const g = ps.filter(p=>state.found.has(p.id)).length;
+      html += `<section class="pos-section"><h2>${POS_NAME[pos]} <span>${g}/${ps.length}</span></h2>
+        <ol class="pos-grid">${ps.map(p=>slotHTML(p,{club:true})).join("")}</ol></section>`;
+    });
+    board.innerHTML = html;
+  }
+}
+
+function renderChips(){
+  $("chips").innerHTML = CLUBS.map((c,i)=>
+    `<button class="chip" data-i="${i}" aria-pressed="${state.clubs.has(i)}"><span class="dot" style="background:linear-gradient(90deg,${c.c1} 50%,${c.c2} 50%)"></span>${c.n}</button>`
+  ).join("");
+}
+function syncControls(){
+  $("showNat").checked = state.showNat;
+  $("showPos").checked = state.showPos;
+  $("limit").value = String(state.limit);
+  document.querySelectorAll("#groupSeg button").forEach(b=>b.setAttribute("aria-pressed", b.dataset.v===state.group));
+  $("answer").disabled = state.over;
+}
+
+/* ---------------- WIRING ---------------- */
+$("answer").addEventListener("input", onInput);
+$("answer").addEventListener("keydown", onKey);
+$("startBtn").addEventListener("click", ()=>{ state.running ? pause() : (start(), $("answer").focus()); });
+$("giveUpBtn").addEventListener("click", giveUp);
+$("resetBtn").addEventListener("click", reset);
+$("showNat").addEventListener("change", e=>{ state.showNat = e.target.checked; render(); save(); });
+$("showPos").addEventListener("change", e=>{ state.showPos = e.target.checked; render(); save(); });
+$("limit").addEventListener("change", e=>{ state.limit = +e.target.value; drawTimer(); save(); });
+$("groupSeg").addEventListener("click", e=>{
+  const b = e.target.closest("button"); if(!b) return;
+  state.group = b.dataset.v; syncControls(); render(); save();
+});
+$("chips").addEventListener("click", e=>{
+  const b = e.target.closest(".chip"); if(!b) return;
+  const i = +b.dataset.i;
+  state.clubs.has(i) ? state.clubs.delete(i) : state.clubs.add(i);
+  b.setAttribute("aria-pressed", state.clubs.has(i));
+  render(); save();
+});
+$("allClubs").addEventListener("click", ()=>{ state.clubs = new Set(CLUBS.map((_,i)=>i)); renderChips(); render(); save(); });
+$("noClubs").addEventListener("click", ()=>{ state.clubs.clear(); renderChips(); render(); save(); });
+document.addEventListener("visibilitychange", ()=>{ if(document.hidden) save(); });
+window.addEventListener("beforeunload", save);
+
+load();
+syncControls(); renderChips(); drawTimer(); render(); syncButtons();
+$("answer").focus();
+</script>
+</body>
+</html>
